@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leafy Powder Quality Checker - AgriSpec Pro</title>
+  <meta name="description" content="Professional leafy powder quality analysis dashboard using spectral reflectance data."/>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode:"class",
+      theme:{extend:{colors:{
+        "background":"#f7f9fb","on-background":"#191c1e",
+        "surface":"#f7f9fb","surface-dim":"#d8dadc","surface-bright":"#f7f9fb",
+        "surface-container-lowest":"#ffffff","surface-container-low":"#f2f4f6",
+        "surface-container":"#eceef0","surface-container-high":"#e6e8ea","surface-container-highest":"#e0e3e5",
+        "surface-variant":"#e0e3e5","on-surface":"#191c1e","on-surface-variant":"#3e4a3d",
+        "inverse-surface":"#2d3133","inverse-on-surface":"#eff1f3",
+        "outline":"#6e7b6c","outline-variant":"#bdcaba",
+        "primary":"#006b2c","on-primary":"#ffffff","primary-container":"#00873a",
+        "on-primary-container":"#f7fff2","primary-fixed":"#7ffc97","primary-fixed-dim":"#62df7d",
+        "on-primary-fixed":"#002109","on-primary-fixed-variant":"#005320","inverse-primary":"#62df7d",
+        "secondary":"#855300","on-secondary":"#ffffff","secondary-container":"#fea619",
+        "on-secondary-container":"#684000","secondary-fixed":"#ffddb8","secondary-fixed-dim":"#ffb95f",
+        "on-secondary-fixed":"#2a1700","on-secondary-fixed-variant":"#653e00",
+        "tertiary":"#bb0112","on-tertiary":"#ffffff","tertiary-container":"#e02928",
+        "on-tertiary-container":"#fffbff","tertiary-fixed":"#ffdad6","tertiary-fixed-dim":"#ffb4ab",
+        "on-tertiary-fixed":"#410002","on-tertiary-fixed-variant":"#93000b",
+        "error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6","on-error-container":"#93000a",
+        "surface-tint":"#006e2d"
+      }}}
+    }
+  </script>
+  <style>
+    body{font-family:"Inter",sans-serif}
+    .material-symbols-outlined{font-variation-settings:"FILL" 1,"wght" 400,"GRAD" 0,"opsz" 24}
+    .input-glow:focus-within{box-shadow:0 0 0 2.5px rgba(0,107,44,0.18);border-color:#006b2c!important}
+    .toggle-checkbox:checked{right:0;border-color:#006b2c}
+    .toggle-checkbox:checked+.toggle-label{background-color:#006b2c}
+    .nav-link{position:relative;text-decoration:none}
+    .nav-link::after{content:"";position:absolute;bottom:-4px;left:0;right:0;height:2px;background:#006b2c;transform:scaleX(0);transition:transform 0.2s}
+    .nav-link.active::after,.nav-link:hover::after{transform:scaleX(1)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .animate-spin{animation:spin 0.8s linear infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+    .animate-pulse{animation:pulse 1.5s ease-in-out infinite}
+    main{animation:fadeUp 0.5s ease both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:600}
+    .badge-good{background:rgba(0,107,44,0.1);color:#006b2c;border:1px solid rgba(0,107,44,0.2)}
+    .badge-moderate{background:rgba(254,166,25,0.15);color:#684000;border:1px solid rgba(254,166,25,0.3)}
+    .badge-poor{background:rgba(187,1,18,0.1);color:#bb0112;border:1px solid rgba(187,1,18,0.2)}
+    .has-tooltip{position:relative}
+    .has-tooltip .tooltip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#2d3133;color:#eff1f3;font-size:11px;padding:4px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:100}
+    .has-tooltip:hover .tooltip{opacity:1}
+    .result-border{transition:border-color 0.5s}
+    tbody tr{transition:background 0.15s}
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col antialiased">
+
+<header class="sticky top-0 z-50 bg-surface-container-low border-b border-surface-container shadow-sm">
+  <div class="flex justify-between items-center w-full px-6 md:px-10 py-3 max-w-screen-xl mx-auto">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-2xl" style="color:#006b2c">science</span>
+      <span class="text-xl font-bold" style="color:#006b2c;letter-spacing:-0.01em">AgriSpec Pro</span>
+    </div>
+    <nav class="hidden md:flex gap-8 items-center">
+      <a class="text-sm font-semibold nav-link active" href="#" style="color:#006b2c">Dashboard</a>
+      <a class="text-sm font-medium nav-link" href="#history" style="color:#3e4a3d">History</a>
+      <a class="text-sm font-medium nav-link" href="#" style="color:#3e4a3d" onclick="showComingSoon(event)">Analytics</a>
+    </nav>
+    <div class="flex items-center gap-2" style="color:#3e4a3d">
+      <button aria-label="notifications" class="p-2 rounded-full transition-all hover:bg-surface-container-high has-tooltip" onclick="showComingSoon(event)">
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span class="tooltip">Notifications</span>
+      </button>
+      <button aria-label="settings" class="p-2 rounded-full transition-all hover:bg-surface-container-high has-tooltip" onclick="showComingSoon(event)">
+        <span class="material-symbols-outlined text-xl">settings</span>
+        <span class="tooltip">Settings</span>
+      </button>
+      <button onclick="window.location.href='index.html'" class="w-9 h-9 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-all has-tooltip">
+        <span class="material-symbols-outlined text-outline text-xl">person</span>
+        <span class="tooltip">Sign Out</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1 w-full max-w-screen-xl mx-auto px-6 md:px-10 py-8 flex flex-col gap-8">
+  <section class="flex flex-col gap-2">
+    <div class="flex items-center gap-3" style="color:#006b2c">
+      <span class="material-symbols-outlined" style="font-size:40px">eco</span>
+      <h1 class="text-3xl md:text-4xl font-bold" style="color:#191c1e;letter-spacing:-0.02em">Leafy Powder Quality Checker</h1>
+    </div>
+    <p class="text-base md:text-lg max-w-3xl" style="color:#3e4a3d;line-height:1.65">
+      Instantly estimate the freshness and chlorophyll quality of your leafy green powder using spectral reflectance data.
+    </p>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- LEFT: Spectral Input -->
+    <div class="col-span-1 lg:col-span-5 flex flex-col">
+      <div class="bg-surface-container-lowest rounded-2xl p-6 border border-surface-container shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+        <div class="flex items-center gap-2 mb-4 pb-4 border-b border-surface-container">
+          <span class="material-symbols-outlined" style="color:#006b2c">sensors</span>
+          <h2 class="text-xl font-semibold" style="color:#191c1e">Live Sensor Input</h2>
+        </div>
+        <div class="mb-5 p-3 rounded-xl flex items-center justify-between gap-3" style="background:#f7f9fb;border:1px solid #e0e3e5">
+          <div class="flex items-center gap-2 min-w-0">
+            <span id="sensor-dot" class="w-2.5 h-2.5 rounded-full flex-none" style="background:#bdcaba"></span>
+            <div class="min-w-0">
+              <p id="sensor-status" class="text-xs font-semibold" style="color:#3e4a3d">Connecting to sensor service…</p>
+              <p id="sensor-detail" class="text-xs truncate" style="color:#6e7b6c">http://localhost:5050</p>
+            </div>
+          </div>
+          <button type="button" onclick="loadStatus(true)" class="text-xs font-semibold" style="color:#006b2c">Retry</button>
+        </div>
+        <form class="flex-1 flex flex-col" id="spectral-form">
+          <p class="text-xs font-bold uppercase tracking-widest mb-4" style="color:#6e7b6c">Six-band sensor readings (raw intensity)</p>
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium" style="color:#3e4a3d" for="val-610">610 nm <span class="text-xs font-normal" style="color:#6e7b6c">(Orange)</span></label>
+              <div class="flex items-center bg-surface rounded-lg overflow-hidden input-glow transition-all" style="border:1.5px solid #bdcaba">
+                <input class="w-full bg-transparent border-none focus:ring-0 text-on-background py-2 px-3 font-medium text-sm" id="val-610" placeholder="Waiting…" readonly type="number"/>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium" style="color:#3e4a3d" for="val-680">680 nm <span class="text-xs font-normal" style="color:#6e7b6c">(Red)</span></label>
+              <div class="flex items-center bg-surface rounded-lg overflow-hidden input-glow transition-all" style="border:1.5px solid #bdcaba">
+                <input class="w-full bg-transparent border-none focus:ring-0 text-on-background py-2 px-3 font-medium text-sm" id="val-680" placeholder="Waiting…" readonly type="number"/>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium" style="color:#3e4a3d" for="val-730">730 nm <span class="text-xs font-normal" style="color:#6e7b6c">(Far-Red)</span></label>
+              <div class="flex items-center bg-surface rounded-lg overflow-hidden input-glow transition-all" style="border:1.5px solid #bdcaba">
+                <input class="w-full bg-transparent border-none focus:ring-0 text-on-background py-2 px-3 font-medium text-sm" id="val-730" placeholder="Waiting…" readonly type="number"/>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium" style="color:#3e4a3d" for="val-760">760 nm <span class="text-xs font-normal" style="color:#6e7b6c">(NIR edge)</span></label>
+              <div class="flex items-center bg-surface rounded-lg overflow-hidden input-glow transition-all" style="border:1.5px solid #bdcaba">
+                <input class="w-full bg-transparent border-none focus:ring-0 text-on-background py-2 px-3 font-medium text-sm" id="val-760" placeholder="Waiting…" readonly type="number"/>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium" style="color:#3e4a3d" for="val-810">810 nm <span class="text-xs font-normal" style="color:#6e7b6c">(NIR)</span></label>
+              <div class="flex items-center bg-surface rounded-lg overflow-hidden input-glow transition-all" style="border:1.5px solid #bdcaba">
+                <input class="w-full bg-transparent border-none focus:ring-0 text-on-background py-2 px-3 font-medium text-sm" id="val-810" placeholder="Waiting…" readonly type="number"/>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium" style="color:#3e4a3d" for="val-860">860 nm <span class="text-xs font-normal" style="color:#6e7b6c">(NIR)</span></label>
+              <div class="flex items-center bg-surface rounded-lg overflow-hidden input-glow transition-all" style="border:1.5px solid #bdcaba">
+                <input class="w-full bg-transparent border-none focus:ring-0 text-on-background py-2 px-3 font-medium text-sm" id="val-860" placeholder="Waiting…" readonly type="number"/>
+              </div>
+            </div>
+          </div>
+          <div class="mt-auto pt-4 border-t border-surface-container flex flex-col gap-3">
+            <div class="flex justify-between items-center px-1">
+              <span class="text-sm font-medium" style="color:#3e4a3d">Live Estimate Index:</span>
+              <span class="text-xl font-bold transition-all" id="live-index" style="color:#bdcaba">--</span>
+            </div>
+            <label class="flex items-center justify-between gap-3 px-1 text-xs font-semibold" style="color:#3e4a3d">
+              <span>Automatic collection every 5 seconds</span>
+              <input id="auto-scan" type="checkbox" class="rounded" style="color:#006b2c"/>
+            </label>
+            <button class="w-full rounded-xl py-3.5 px-4 text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+              id="predict-btn" type="button" style="background:#006b2c;color:#fff;box-shadow:0 4px 14px rgba(0,107,44,0.25);font-family:inherit">
+              <span class="material-symbols-outlined" id="predict-icon" style="font-size:20px">sensors</span>
+              <span id="predict-label">Scan Sensor &amp; Analyze</span>
+            </button>
+            <button class="w-full rounded-xl py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-2 transition-all hover:bg-surface-container"
+              id="reset-btn" type="button" style="border:1.5px solid #e0e3e5;color:#3e4a3d;font-family:inherit">
+              <span class="material-symbols-outlined text-sm">refresh</span>
+              Clear Display
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col-span-1 lg:col-span-7 flex flex-col gap-4">
+      <div class="bg-surface-container-lowest rounded-2xl border border-surface-container flex flex-col overflow-hidden shadow-sm transition-all duration-500 min-h-64" id="result-panel">
+        <div class="h-1.5 w-full transition-all duration-500" id="result-accent" style="background:#bdcaba"></div>
+        <div class="p-8 flex-1 flex flex-col items-center justify-center text-center">
+          <div class="w-20 h-20 rounded-full flex items-center justify-center mb-4 transition-all duration-500" id="result-icon-container" style="background:#eceef0">
+            <span class="material-symbols-outlined transition-all duration-500" id="result-icon" style="font-size:40px;color:#bdcaba">hourglass_empty</span>
+          </div>
+          <h3 class="text-3xl font-bold mb-2 transition-all duration-500" id="result-title" style="color:#3e4a3d">Awaiting Input</h3>
+          <p class="text-sm max-w-sm transition-all duration-500" id="result-desc" style="color:#6e7b6c;line-height:1.65">
+            Start the sensor service, then scan once or enable automatic collection.
+          </p>
+          <div class="hidden w-full mt-6 pt-5 border-t border-surface-container" id="result-metrics" style="display:none">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs font-bold uppercase tracking-wider" style="color:#6e7b6c">Calculated Index</span>
+                <span class="text-2xl font-bold" id="final-index" style="color:#191c1e">0.00</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs font-bold uppercase tracking-wider" style="color:#6e7b6c">Red-edge avg</span>
+                <span class="text-lg font-bold" id="red-edge-val" style="color:#191c1e">—</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs font-bold uppercase tracking-wider" style="color:#6e7b6c">NIR avg</span>
+                <span class="text-lg font-bold" id="nir-val" style="color:#191c1e">—</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-xs font-bold uppercase tracking-wider" style="color:#6e7b6c">Sample ID</span>
+                <span class="text-sm font-bold font-mono" id="sample-id" style="color:#191c1e">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface-container-lowest rounded-2xl p-6 border border-surface-container shadow-sm flex flex-col flex-1">
+        <div class="flex justify-between items-start mb-4">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined" style="color:#006b2c">lightbulb</span>
+            <h2 class="text-lg font-semibold" style="color:#191c1e">Analysis Explanation</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold" style="color:#3e4a3d">Technical detail</span>
+            <div class="relative inline-block w-10 align-middle select-none">
+              <input class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-surface-variant appearance-none cursor-pointer z-10 transition-all" style="top:2px;left:2px" id="ai-toggle" type="checkbox"/>
+              <label class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer transition-colors" for="ai-toggle" style="background:#e0e3e5"></label>
+            </div>
+          </div>
+        </div>
+        <div class="text-sm p-4 rounded-xl border flex-1 transition-all duration-300" id="explanation-text" style="color:#3e4a3d;background:#f7f9fb;border-color:#eceef0;line-height:1.7">
+          <p class="mb-2"><strong>Standard Model:</strong> The Leafy Powder Quality Index (LPQI) utilizes a normalized difference approach primarily contrasting the red edge (680&ndash;730nm) against near-infrared reflectance (760&ndash;860nm).</p>
+          <p>High reflectance in the NIR coupled with strong absorption at 680nm indicates intact cellular structures and high chlorophyll concentration, typical of fresh, high-quality powder. Degradation from heat or aging flattens this curve, lowering the index.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <section id="history">
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-container shadow-sm overflow-hidden">
+      <div class="p-6 border-b border-surface-container flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined" style="color:#006b2c">history</span>
+          <h2 class="text-lg font-semibold" style="color:#191c1e">Readings History</h2>
+          <span class="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded-full" style="background:rgba(0,107,44,0.1);color:#006b2c" id="history-count">0 records</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="downloadExcel()" class="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all hover:bg-surface-container-high" style="border:1.5px solid rgba(0,107,44,0.3);color:#006b2c;font-family:inherit">
+            <span class="material-symbols-outlined text-sm">download</span> Download Excel
+          </button>
+          <button onclick="clearHistory()" class="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all" style="color:#bb0112;font-family:inherit">
+            <span class="material-symbols-outlined text-sm">delete</span> Clear All
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="text-xs font-bold uppercase tracking-wider" style="background:#f7f9fb;border-bottom:1px solid #eceef0;color:#6e7b6c">
+              <th class="px-6 py-3">Timestamp</th>
+              <th class="px-6 py-3">Sample ID</th>
+              <th class="px-6 py-3 text-right">Index Value</th>
+              <th class="px-6 py-3">Quality Assessed</th>
+              <th class="px-6 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody" class="text-sm divide-y divide-surface-container" style="color:#191c1e"></tbody>
+        </table>
+        <div class="px-6 py-12 text-center" id="history-empty" style="display:none">
+          <span class="material-symbols-outlined block mb-3" style="font-size:48px;color:#bdcaba">inbox</span>
+          <p class="text-sm font-medium" style="color:#6e7b6c">No readings yet. Run your first prediction!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="w-full py-3 px-6 text-center border-t border-surface-container" style="background:#e6e8ea">
+  <p class="text-xs flex items-center justify-center gap-1.5 max-w-screen-xl mx-auto" style="color:#6e7b6c">
+    <span class="material-symbols-outlined" style="font-size:14px">info</span>
+    Thresholds are literature-derived and not locally calibrated; validation with real samples is pending.
+  </p>
+</div>
+
+<footer class="w-full border-t border-surface-container px-6 md:px-10 py-5 flex flex-col md:flex-row justify-between items-center gap-3" style="background:#d8dadc">
+  <p class="text-xs" style="color:#3e4a3d">&copy; 2026 AgriSpec Spectral Laboratory. Research prototype; calibrate before production use.</p>
+  <div class="flex gap-6">
+    <a class="text-xs hover:underline" href="#" style="color:#3e4a3d">Scientific Documentation</a>
+    <a class="text-xs hover:underline" href="#" style="color:#3e4a3d">Terms of Service</a>
+    <a class="text-xs hover:underline" href="#" style="color:#3e4a3d">Privacy Policy</a>
+  </div>
+</footer>
+
+<div id="toast" style="position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:12px;background:#006b2c;color:white;font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,107,44,0.3);z-index:9999;opacity:0;transform:translateY(12px);transition:all 0.3s;display:flex;align-items:center;gap:8px;font-family:inherit">
+  <span class="material-symbols-outlined" id="toast-icon" style="font-size:16px">check_circle</span>
+  <span id="toast-msg">Done!</span>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
