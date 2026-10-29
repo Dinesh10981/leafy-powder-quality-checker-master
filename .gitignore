@@ -14,3 +14,17 @@ dist/
 build/
 venv/
 .venv/
+
+# Root-level legacy/duplicate files
+/dashboard.html
+/dashboard.js
+/data_logger.py
+/moringa_model.pkl
+/favicon.svg
+/index.html
+/requirements.txt
+/outputs/
+
+# Misc
+*.ndjson
+frontend/dashboard-bg.mp4
