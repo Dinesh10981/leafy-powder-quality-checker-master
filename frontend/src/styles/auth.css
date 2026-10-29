@@ -1,0 +1,98 @@
+/* Styles for Authentication portal (index.html) */
+body { font-family: "Inter", sans-serif; }
+.material-symbols-outlined { font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24; }
+
+.glass-card {
+  background: linear-gradient(145deg, rgba(14, 42, 25, 0.88), rgba(5, 24, 14, 0.86));
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(163, 229, 176, 0.2);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.tab-active { border-bottom: 2px solid #83eca0; color: #9bf2ad; }
+.tab-inactive { color: #b0c9b6; border-bottom: 2px solid transparent; }
+.glass-card h1 { color: #eff8f0 !important; }
+.glass-card p, .glass-card label { color: #c1d8c6 !important; }
+.glass-card [style*="color:#006b2c"] { color: #8ceca0 !important; }
+.glass-card [style*="background:rgba(0,107,44,0.1)"] { background: rgba(100, 224, 129, 0.13) !important; border: 1px solid rgba(140, 236, 160, 0.2); }
+.glass-card [style*="border-bottom:1px solid #e0e3e5"],
+.glass-card [style*="border-top:1px solid #e0e3e5"] { border-color: rgba(164, 218, 174, 0.16) !important; }
+
+.input-field {
+  width: 100%; padding: 0.72rem 1rem; border-radius: 0.5rem;
+  border: 1.5px solid rgba(164, 218, 174, 0.3) !important;
+  background-color: rgba(2, 18, 10, 0.78) !important;
+  background-image: none !important;
+  color: #f2fff4 !important;
+  -webkit-text-fill-color: #f2fff4 !important;
+  caret-color: #9bf2ad;
+  font-size: 15px; transition: all 0.2s; font-family: inherit; box-shadow: inset 0 1px 4px rgba(0,0,0,.18);
+}
+.input-field::placeholder { color: #9db5a3 !important; opacity: 1; -webkit-text-fill-color: #9db5a3 !important; }
+.input-field:focus { outline: none; border-color: #83eca0 !important; background-color: rgba(2, 18, 10, 0.9) !important; box-shadow: 0 0 0 3px rgba(103, 225, 133, 0.14), 0 0 22px rgba(68, 195, 103, 0.1); }
+.input-field:-webkit-autofill,
+.input-field:-webkit-autofill:hover,
+.input-field:-webkit-autofill:focus,
+.input-field:-webkit-autofill:active {
+  -webkit-text-fill-color: #f2fff4 !important;
+  -webkit-box-shadow: 0 0 0 1000px #0b2415 inset, inset 0 1px 4px rgba(0,0,0,.18) !important;
+  box-shadow: 0 0 0 1000px #0b2415 inset, inset 0 1px 4px rgba(0,0,0,.18) !important;
+  caret-color: #9bf2ad;
+}
+
+.btn-primary {
+  width: 100%; padding: 0.78rem 1.5rem; border-radius: 0.5rem;
+  background: linear-gradient(110deg, #168846, #39bb63);
+  color: #fff; font-weight: 600; font-size: 15px; letter-spacing: 0.01em;
+  transition: all 0.2s; box-shadow: 0 8px 24px rgba(18, 157, 72, 0.28), inset 0 1px rgba(255,255,255,.2);
+  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: inherit;
+}
+.btn-primary:hover { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 9px 28px rgba(0, 179, 74, 0.35), inset 0 1px rgba(255,255,255,.24); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+.auth-bg {
+  isolation: isolate; background: #06150d; color: #eff8f0;
+}
+
+.auth-scene { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; perspective: 1100px; transform-style: preserve-3d; background: radial-gradient(ellipse at 50% 48%, #12321d 0%, #091d12 47%, #040e09 100%); }
+.auth-grid { position: absolute; left: -20%; bottom: -48%; width: 140%; height: 100%; transform: rotateX(66deg); transform-origin: center top; background-image: linear-gradient(rgba(128, 221, 148, .13) 1px, transparent 1px), linear-gradient(90deg, rgba(128, 221, 148, .13) 1px, transparent 1px); background-size: 56px 56px; mask-image: linear-gradient(transparent, #000 30%, #000 75%, transparent); animation: grid-drift 26s linear infinite; }
+.auth-glow { position: absolute; border-radius: 50%; filter: blur(28px); transform-style: preserve-3d; will-change: transform; }
+.glow-one { width: min(58vw, 780px); aspect-ratio: 1; left: -18%; top: -40%; background: radial-gradient(circle, rgba(76, 211, 111, .24), rgba(34, 130, 70, .07) 44%, transparent 72%); animation: glow-drift-one 17s ease-in-out infinite alternate; }
+.glow-two { width: min(54vw, 700px); aspect-ratio: 1; right: -20%; bottom: -43%; background: radial-gradient(circle, rgba(165, 236, 129, .16), rgba(37, 143, 76, .06) 48%, transparent 72%); animation: glow-drift-two 21s ease-in-out infinite alternate; }
+.auth-ring { position: absolute; left: 50%; top: 50%; border: 1px solid rgba(150, 230, 167, .2); border-radius: 50%; transform-style: preserve-3d; box-shadow: 0 0 40px rgba(61, 193, 99, .06), inset 0 0 32px rgba(61, 193, 99, .04); }
+.auth-ring span { position: absolute; left: 50%; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: #a1f2ad; box-shadow: 0 0 18px 5px rgba(117, 234, 142, .45); }
+.ring-one { width: min(84vw, 1150px); height: min(40vw, 560px); animation: ring-rotate-one 34s linear infinite; }
+.ring-two { width: min(74vw, 980px); height: min(58vw, 740px); border-color: rgba(140, 210, 153, .12); animation: ring-rotate-two 43s linear infinite; }
+.ring-two span { background: #f2c879; box-shadow: 0 0 18px 5px rgba(242, 200, 121, .3); }
+.auth-leaf { position: absolute; color: rgba(150, 241, 166, .68); text-shadow: 0 0 28px rgba(103, 225, 133, .34); transform-style: preserve-3d; will-change: transform; }
+.leaf-one { left: 13%; top: 20%; font-size: 46px; animation: leaf-float-one 13s ease-in-out infinite; }
+.leaf-two { right: 14%; top: 24%; font-size: 34px; color: rgba(207, 235, 139, .66); animation: leaf-float-two 16s ease-in-out infinite; }
+.leaf-three { left: 18%; bottom: 18%; font-size: 30px; animation: leaf-float-two 18s ease-in-out infinite reverse; }
+.leaf-four { right: 19%; bottom: 15%; font-size: 48px; color: rgba(150, 241, 166, .52); animation: leaf-float-one 20s ease-in-out infinite reverse; }
+@keyframes grid-drift { to { background-position: 0 56px, 56px 0; } }
+@keyframes glow-drift-one { from { transform: translate3d(0, 0, 30px) scale(.92); } to { transform: translate3d(12vw, 9vh, 110px) scale(1.12); } }
+@keyframes glow-drift-two { from { transform: translate3d(0, 0, 20px) scale(1.08); } to { transform: translate3d(-10vw, -8vh, 90px) scale(.92); } }
+@keyframes ring-rotate-one { from { transform: translate(-50%, -50%) rotateX(66deg) rotateZ(-18deg); } to { transform: translate(-50%, -50%) rotateX(66deg) rotateZ(342deg); } }
+@keyframes ring-rotate-two { from { transform: translate(-50%, -50%) rotateX(72deg) rotateY(28deg) rotateZ(34deg); } to { transform: translate(-50%, -50%) rotateX(72deg) rotateY(28deg) rotateZ(-326deg); } }
+@keyframes leaf-float-one { 0%, 100% { transform: translate3d(0, 0, 20px) rotateX(28deg) rotateY(-30deg) rotateZ(-16deg); } 50% { transform: translate3d(16px, -24px, 100px) rotateX(-12deg) rotateY(34deg) rotateZ(12deg); } }
+@keyframes leaf-float-two { 0%, 100% { transform: translate3d(0, 0, 70px) rotateX(-24deg) rotateY(22deg) rotateZ(18deg); } 50% { transform: translate3d(-18px, 22px, 10px) rotateX(18deg) rotateY(-38deg) rotateZ(-12deg); } }
+@media (prefers-reduced-motion: reduce) { .auth-scene *, .card-enter { animation: none !important; } }
+
+.card-enter { animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(28px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
+
+.form-slide { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+
+.toast {
+  position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 12px;
+  background: #006b2c; color: white; font-size: 14px; font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 107, 44, 0.3); z-index: 9999; opacity: 0;
+  transform: translateY(12px); transition: all 0.3s ease;
+  display: flex; align-items: center; gap: 8px; font-family: inherit;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+@keyframes spin { to { transform: rotate(360deg) } }
+.animate-spin { animation: spin 0.8s linear infinite; }

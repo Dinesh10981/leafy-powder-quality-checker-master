@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leafy Powder Quality Checker - Authentication</title>
+  <meta name="description" content="Sign in to AgriSpec Pro — the professional leafy powder quality analysis platform."/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background":"#f7f9fb","on-background":"#191c1e",
+            "surface":"#f7f9fb","surface-container-lowest":"#ffffff",
+            "surface-container":"#eceef0","surface-container-high":"#e6e8ea",
+            "surface-variant":"#e0e3e5","on-surface":"#191c1e",
+            "on-surface-variant":"#3e4a3d","primary":"#006b2c",
+            "on-primary":"#ffffff","primary-container":"#00873a",
+            "primary-fixed-dim":"#62df7d","on-primary-fixed-variant":"#005320",
+            "outline":"#6e7b6c","outline-variant":"#bdcaba",
+            "error":"#ba1a1a","tertiary":"#bb0112",
+            "secondary-container":"#fea619","on-secondary-container":"#684000"
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="../styles/auth.css"/>
+  <link rel="stylesheet" href="styles/auth.css"/>
+</head>
+<body class="min-h-screen flex items-center justify-center relative overflow-hidden auth-bg">
+  <div class="auth-scene" aria-hidden="true">
+    <div class="auth-grid"></div>
+    <div class="auth-glow glow-one"></div>
+    <div class="auth-glow glow-two"></div>
+    <div class="auth-ring ring-one"><span></span></div>
+    <div class="auth-ring ring-two"><span></span></div>
+    <span class="auth-leaf leaf-one material-symbols-outlined">eco</span>
+    <span class="auth-leaf leaf-two material-symbols-outlined">eco</span>
+    <span class="auth-leaf leaf-three material-symbols-outlined">eco</span>
+    <span class="auth-leaf leaf-four material-symbols-outlined">eco</span>
+  </div>
+
+  <main class="w-full max-w-md mx-4 glass-card rounded-2xl overflow-hidden relative z-10 card-enter" style="max-width:420px">
+    <div class="px-8 pt-8 pb-5 text-center">
+      <div class="flex justify-center mb-3">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(0,107,44,0.1)">
+          <span class="material-symbols-outlined text-4xl" style="color:#006b2c">eco</span>
+        </div>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight mb-1" style="color:#191c1e">Leafy Powder Pro</h1>
+      <p class="text-sm" style="color:#3e4a3d">Quality Checker &amp; Analysis Log</p>
+    </div>
+
+    <div class="flex mx-6" style="border-bottom:1px solid #e0e3e5">
+      <button class="flex-1 py-3 text-sm font-semibold text-center tab-active transition-all" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+      <button class="flex-1 py-3 text-sm font-semibold text-center tab-inactive transition-all" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <div class="relative overflow-hidden" id="forms-container" style="min-height:300px">
+      <form class="absolute inset-0 px-8 pt-6 pb-4 form-slide flex flex-col gap-4" id="form-signin" onsubmit="handleSignIn(event)" style="transform:translateX(0)">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signin-email">Email Address</label>
+          <input class="input-field" id="signin-email" placeholder="technician@lab.com" required type="email"/>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signin-password">Password</label>
+            <a class="text-xs font-medium hover:underline" href="#" style="color:#006b2c">Forgot password?</a>
+          </div>
+          <input class="input-field" id="signin-password" placeholder="••••••••" required type="password"/>
+        </div>
+        <div class="pt-1">
+          <button class="btn-primary" id="signin-btn" type="submit">
+            <span id="signin-label">Authenticate</span>
+            <span class="material-symbols-outlined text-lg" id="signin-icon">login</span>
+          </button>
+        </div>
+      </form>
+
+      <form class="absolute inset-0 px-8 pt-6 pb-4 form-slide flex flex-col gap-4 invisible" id="form-signup" onsubmit="handleSignUp(event)" style="transform:translateX(100%)">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-name">Full Name</label>
+          <input class="input-field" id="signup-name" placeholder="Dr. Jane Smith" required type="text"/>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-email">Work Email</label>
+          <input class="input-field" id="signup-email" placeholder="j.smith@agrispec.org" required type="email"/>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-password">Password</label>
+          <input class="input-field" id="signup-password" minlength="6" placeholder="At least 6 characters" required type="password"/>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-confirm">Confirm Password</label>
+          <input class="input-field" id="signup-confirm" minlength="6" placeholder="Repeat password" required type="password"/>
+        </div>
+        <div class="pt-1">
+          <button class="btn-primary" id="signup-btn" type="submit">
+            <span>Create Account</span>
+            <span class="material-symbols-outlined text-lg">person_add</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="px-8 pb-6 pt-4 text-center" style="border-top:1px solid #e0e3e5">
+      <p class="text-xs flex items-center justify-center gap-1.5" style="color:rgba(62,74,61,0.55)">
+        <span class="material-symbols-outlined" style="font-size:14px">lock</span>
+        Secured by AgriSpec Spectral Protocol v2.4
+      </p>
+    </div>
+  </main>
+
+  <div class="toast" id="toast">
+    <span class="material-symbols-outlined" id="toast-icon" style="font-size:16px">check_circle</span>
+    <span id="toast-msg">Success!</span>
+  </div>
+
+  <script src="../scripts/auth.js"></script>
+  <script src="scripts/auth.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>

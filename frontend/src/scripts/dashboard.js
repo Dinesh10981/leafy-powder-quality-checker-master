@@ -1,0 +1,320 @@
+const API_BASE = new URLSearchParams(window.location.search).get("api") ||
+  (window.location.protocol === "file:" ? "http://localhost:5050" : window.location.origin);
+const BANDS = [["R", "val-610"], ["S", "val-680"], ["T", "val-730"], ["U", "val-760"], ["V", "val-810"], ["W", "val-860"]];
+const sensorInputs = BANDS.map(([, id]) => document.getElementById(id));
+const liveIndex = document.getElementById("live-index");
+
+let sensorHistory = [];
+let scanInProgress = false;
+let autoScanTimer = null;
+let currentRecord = null;
+
+function showToast(message, icon = "check_circle", isError = false) {
+  const toast = document.getElementById("toast");
+  document.getElementById("toast-msg").textContent = message;
+  document.getElementById("toast-icon").textContent = icon;
+  toast.style.background = isError ? "#7f3038" : (icon === "warning" ? "#75511c" : "#176b38");
+  toast.style.opacity = "1";
+  toast.style.transform = "translateY(0)";
+  window.setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(12px)";
+  }, 3600);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
+  })[character]);
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(API_BASE + path, { cache: "no-store", ...options });
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch (_error) {
+    payload = { error: "Sensor service returned an invalid response." };
+  }
+  if (!response.ok || payload.ok === false) {
+    throw new Error(payload.error || `Request failed (${response.status})`);
+  }
+  return payload;
+}
+
+function sampleId(record) {
+  return `MOR-${String(record.sample_no).padStart(5, "0")}`;
+}
+
+function getQualityBadgeClass(quality) {
+  const q = String(quality || "").toLowerCase();
+  if (q === "good" || q === "high") return "badge-good";
+  if (q === "moderate" || q === "medium") return "badge-moderate";
+  return "badge-poor";
+}
+
+function normalizeQualityState(state) {
+  const s = String(state || "").toLowerCase();
+  if (s === "high" || s === "good") return "good";
+  if (s === "medium" || s === "moderate") return "moderate";
+  if (s === "low" || s === "poor") return "poor";
+  return s;
+}
+
+function renderHistory() {
+  const body = document.getElementById("history-tbody");
+  const empty = document.getElementById("history-empty");
+  const count = document.getElementById("history-count");
+  count.textContent = `${sensorHistory.length} record${sensorHistory.length === 1 ? "" : "s"}`;
+  if (!sensorHistory.length) {
+    body.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+  body.innerHTML = sensorHistory.map((record, index) => {
+    const badge = getQualityBadgeClass(record.quality);
+    return `<tr class="hover:bg-surface transition-colors">
+      <td class="px-6 py-4" style="color:#3e4a3d">${escapeHtml(`${record.date} ${record.time}`)}</td>
+      <td class="px-6 py-4 font-mono font-semibold text-xs">${escapeHtml(sampleId(record))}</td>
+      <td class="px-6 py-4 text-right font-bold">${Number(record.lpqi).toFixed(3)}</td>
+      <td class="px-6 py-4"><span class="badge ${badge}">${escapeHtml(record.quality)}</span></td>
+      <td class="px-6 py-4 text-right"><button onclick="viewReading(${index})" class="text-xs font-semibold hover:underline" style="color:#006b2c;background:none;border:none;cursor:pointer;font-family:inherit">View</button></td>
+    </tr>`;
+  }).join("");
+}
+
+function fillInputs(record) {
+  BANDS.forEach(([band, id]) => {
+    document.getElementById(id).value = Number(record[band]).toFixed(4);
+  });
+  liveIndex.textContent = Number(record.lpqi).toFixed(3);
+  const qState = normalizeQualityState(record.quality);
+  liveIndex.style.color = qState === "good" ? "#8befa3" : (qState === "moderate" ? "#ffc76f" : "#ff8e8e");
+}
+
+function setResult(state, record) {
+  const accent = document.getElementById("result-accent");
+  const iconContainer = document.getElementById("result-icon-container");
+  const icon = document.getElementById("result-icon");
+  const title = document.getElementById("result-title");
+  const description = document.getElementById("result-desc");
+  const metrics = document.getElementById("result-metrics");
+  const indexValue = document.getElementById("final-index");
+  icon.classList.remove("animate-spin");
+
+  if (state === "idle") {
+    accent.style.background = "rgba(142,217,153,.32)";
+    iconContainer.style.background = "rgba(142,200,153,.13)";
+    iconContainer.style.boxShadow = "";
+    icon.textContent = "hourglass_empty";
+    icon.style.color = "#9bb6a0";
+    title.textContent = "Awaiting Sensor";
+    title.style.color = "#d6e7d9";
+    description.textContent = "Start the sensor service, then scan once or enable automatic collection.";
+    description.style.color = "#aec5b3";
+    metrics.style.display = "none";
+    currentRecord = null;
+    return;
+  }
+
+  if (state === "loading") {
+    accent.style.background = "linear-gradient(90deg,transparent,#79e895,transparent)";
+    icon.textContent = "autorenew";
+    icon.classList.add("animate-spin");
+    icon.style.color = "#91f3a6";
+    title.textContent = "Scanning Sensor…";
+    title.style.color = "#eff8f0";
+    description.textContent = "Collecting 6 spectral bands, analyzing quality with ML model, and saving to Excel…";
+    description.style.color = "#c3d8c8";
+    return;
+  }
+
+  const normState = normalizeQualityState(state);
+  const styles = {
+    good: {
+      accent: "linear-gradient(90deg,#45ce6c,#a0f7b1)",
+      background: "rgba(82,225,123,.14)",
+      color: "#8befa3",
+      icon: "check_circle",
+      title: "Good Quality",
+      description: "ML model (moringa_model.pkl) classified this sample as high quality based on 6 spectral bands."
+    },
+    moderate: {
+      accent: "linear-gradient(90deg,#e9a63f,#ffda91)",
+      background: "rgba(244,177,71,.15)",
+      color: "#ffc76f",
+      icon: "warning",
+      title: "Moderate Quality",
+      description: "ML model (moringa_model.pkl) classified this sample as moderate quality; compare with calibrated references."
+    },
+    poor: {
+      accent: "linear-gradient(90deg,#e66068,#ffaaaa)",
+      background: "rgba(243,104,104,.15)",
+      color: "#ff8e8e",
+      icon: "error",
+      title: "Poor Quality",
+      description: "ML model (moringa_model.pkl) classified this sample as low/poor quality based on 6 spectral bands."
+    },
+  };
+  const selected = styles[normState] || styles.poor;
+  accent.style.background = selected.accent;
+  iconContainer.style.background = selected.background;
+  iconContainer.style.boxShadow = `0 0 28px ${normState === "good" ? "rgba(87,222,119,.18)" : normState === "moderate" ? "rgba(244,177,71,.13)" : "rgba(243,104,104,.13)"}`;
+  icon.textContent = selected.icon;
+  icon.style.color = selected.color;
+  title.textContent = selected.title;
+  title.style.color = selected.color;
+  description.textContent = selected.description;
+  description.style.color = "#c3d8c8";
+  metrics.style.display = "block";
+  indexValue.textContent = Number(record.lpqi).toFixed(3);
+  indexValue.style.color = selected.color;
+  document.getElementById("red-edge-val").textContent = Number(record.red_edge_average).toFixed(2);
+  document.getElementById("nir-val").textContent = Number(record.nir_average).toFixed(2);
+  document.getElementById("sample-id").textContent = sampleId(record);
+  currentRecord = record;
+  updateExplanation();
+}
+
+function setConnection(online, title, detail) {
+  document.getElementById("sensor-dot").style.background = online ? "#78e997" : "#ff7f7f";
+  document.getElementById("sensor-status").textContent = title;
+  document.getElementById("sensor-detail").textContent = detail;
+}
+
+async function scanSensor() {
+  if (scanInProgress) return;
+  scanInProgress = true;
+  const button = document.getElementById("predict-btn");
+  const label = document.getElementById("predict-label");
+  const icon = document.getElementById("predict-icon");
+  label.textContent = "Scanning…";
+  icon.textContent = "autorenew";
+  icon.classList.add("animate-spin");
+  button.disabled = true;
+  setResult("loading", null);
+  try {
+    const record = await api("/api/scan", { method: "POST" });
+    fillInputs(record);
+    setResult(record.quality.toLowerCase(), record);
+    sensorHistory = [record, ...sensorHistory].slice(0, 500);
+    renderHistory();
+    const qNorm = normalizeQualityState(record.quality);
+    const toastIcon = qNorm === "good" ? "check_circle" : (qNorm === "moderate" ? "warning" : "error");
+    showToast(`Sample ${record.sample_no} saved: ${record.quality} quality.`, toastIcon);
+    setConnection(true, "Sensor service online", `Last sample saved at ${record.time}`);
+  } catch (error) {
+    setResult("idle", null);
+    setConnection(false, "Sensor unavailable", error.message);
+    showToast(error.message, "error", true);
+  } finally {
+    icon.classList.remove("animate-spin");
+    label.textContent = "Scan Sensor & Analyze";
+    icon.textContent = "sensors";
+    button.disabled = false;
+    scanInProgress = false;
+  }
+}
+
+function viewReading(index) {
+  const record = sensorHistory[index];
+  fillInputs(record);
+  setResult(record.quality.toLowerCase(), record);
+  document.getElementById("spectral-form").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function loadHistory() {
+  try {
+    const result = await api("/api/history");
+    sensorHistory = result.rows || [];
+    renderHistory();
+  } catch (error) {
+    sensorHistory = [];
+    renderHistory();
+    setConnection(false, "Start data_logger.py", error.message);
+  }
+}
+
+async function clearHistory() {
+  if (!sensorHistory.length || !window.confirm("Delete all saved sensor readings from the Excel workbook?")) return;
+  try {
+    await api("/api/history", { method: "DELETE" });
+    sensorHistory = [];
+    renderHistory();
+    setResult("idle", null);
+    sensorInputs.forEach((input) => { input.value = ""; });
+    liveIndex.textContent = "--";
+    showToast("Excel history cleared.", "delete");
+  } catch (error) {
+    showToast(error.message, "error", true);
+  }
+}
+
+function downloadExcel() {
+  if (!sensorHistory.length) {
+    showToast("No sensor records to download.", "warning", true);
+    return;
+  }
+  window.location.href = `${API_BASE}/api/export`;
+}
+
+async function loadStatus(showSuccess = false) {
+  try {
+    const status = await api("/api/status");
+    const detail = status.last_scan_ok === false ? status.last_scan_error : `${status.samples} saved sample${status.samples === 1 ? "" : "s"} · ${status.sensor_url}`;
+    setConnection(status.last_scan_ok !== false, "Sensor service online", detail);
+    if (showSuccess) showToast("Sensor service is reachable.");
+  } catch (error) {
+    setConnection(false, "Start data_logger.py", error.message);
+    if (showSuccess) showToast(error.message, "error", true);
+  }
+}
+
+function updateExplanation() {
+  const explanation = document.getElementById("explanation-text");
+  const detailed = document.getElementById("ai-toggle").checked;
+  if (detailed && currentRecord) {
+    const mlLabel = currentRecord.ml_prediction || currentRecord.quality || "Classified";
+    const confText = currentRecord.confidence ? ` (${(Number(currentRecord.confidence) * 100).toFixed(1)}% confidence)` : "";
+    explanation.innerHTML = `<p class="mb-2"><strong>ML Model Decision:</strong> <code>moringa_model.pkl</code> predicted <strong>${escapeHtml(mlLabel)}</strong>${confText} &rarr; classified as <strong>${escapeHtml(currentRecord.quality)} Quality</strong>.</p><p class="text-xs" style="color:#6e7b6c">Spectral Telemetry: Red-edge avg = ${Number(currentRecord.red_edge_average).toFixed(4)}, NIR avg = ${Number(currentRecord.nir_average).toFixed(4)}, LPQI = ${Number(currentRecord.lpqi).toFixed(4)}.</p>`;
+    explanation.style.background = "rgba(76,202,109,.07)";
+    explanation.style.borderColor = "rgba(142,217,153,.2)";
+  } else {
+    explanation.innerHTML = '<p class="mb-2"><strong>ML Model (moringa_model.pkl):</strong> Quality classification is performed by a Random Forest Classifier trained on 6 spectral bands (W1&ndash;W6: 610, 680, 730, 760, 810, 860 nm).</p><p>The ML model predicts High, Medium, or Low quality directly from spectral features, replacing the prototype formula threshold while retaining full telemetry and Excel logging.</p>';
+    explanation.style.background = "rgba(4,21,13,.54)";
+    explanation.style.borderColor = "rgba(142,217,153,.17)";
+  }
+}
+
+function showComingSoon(event) {
+  event.preventDefault();
+  showToast("Coming soon!", "schedule");
+}
+
+document.getElementById("predict-btn").addEventListener("click", scanSensor);
+document.getElementById("reset-btn").addEventListener("click", () => {
+  sensorInputs.forEach((input) => { input.value = ""; });
+  liveIndex.textContent = "--";
+  liveIndex.style.color = "#9bb6a0";
+  setResult("idle", null);
+});
+document.getElementById("auto-scan").addEventListener("change", (event) => {
+  if (event.target.checked) {
+    scanSensor();
+    autoScanTimer = window.setInterval(scanSensor, 5000);
+    showToast("Automatic sensor collection enabled.", "sensors");
+  } else {
+    window.clearInterval(autoScanTimer);
+    autoScanTimer = null;
+    showToast("Automatic collection stopped.", "pause");
+  }
+});
+document.getElementById("ai-toggle").addEventListener("change", updateExplanation);
+
+renderHistory();
+setResult("idle", null);
+updateExplanation();
+loadStatus();
+loadHistory();
+window.setInterval(() => loadStatus(false), 5000);

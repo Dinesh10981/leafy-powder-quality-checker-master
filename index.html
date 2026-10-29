@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leafy Powder Quality Checker - Authentication</title>
+  <meta name="description" content="Sign in to AgriSpec Pro — the professional leafy powder quality analysis platform."/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background":"#f7f9fb","on-background":"#191c1e",
+            "surface":"#f7f9fb","surface-container-lowest":"#ffffff",
+            "surface-container":"#eceef0","surface-container-high":"#e6e8ea",
+            "surface-variant":"#e0e3e5","on-surface":"#191c1e",
+            "on-surface-variant":"#3e4a3d","primary":"#006b2c",
+            "on-primary":"#ffffff","primary-container":"#00873a",
+            "primary-fixed-dim":"#62df7d","on-primary-fixed-variant":"#005320",
+            "outline":"#6e7b6c","outline-variant":"#bdcaba",
+            "error":"#ba1a1a","tertiary":"#bb0112",
+            "secondary-container":"#fea619","on-secondary-container":"#684000"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    .material-symbols-outlined { font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24; }
+    .glass-card {
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(0,107,44,0.08);
+      box-shadow: 0 8px 40px rgba(0,107,44,0.08), 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .tab-active { border-bottom: 2px solid #006b2c; color: #006b2c; }
+    .tab-inactive { color: #3e4a3d; border-bottom: 2px solid transparent; }
+    .input-field {
+      width:100%; padding:0.72rem 1rem; border-radius:0.5rem;
+      border:1.5px solid #e0e3e5; background:#fff; color:#191c1e;
+      font-size:15px; transition:all 0.2s; font-family:inherit;
+    }
+    .input-field:focus { outline:none; border-color:#006b2c; box-shadow:0 0 0 3px rgba(0,107,44,0.12); }
+    .btn-primary {
+      width:100%; padding:0.78rem 1.5rem; border-radius:0.5rem;
+      background:linear-gradient(135deg,#006b2c 0%,#005320 100%);
+      color:#fff; font-weight:600; font-size:15px; letter-spacing:0.01em;
+      transition:all 0.2s; box-shadow:0 4px 14px rgba(0,107,44,0.25);
+      border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+      font-family:inherit;
+    }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,107,44,0.35); }
+    .btn-primary:active { transform:scale(0.98); }
+    .btn-primary:disabled { opacity:0.7; cursor:not-allowed; transform:none; }
+    .auth-bg {
+      background: linear-gradient(135deg,#f0f9f2 0%,#e8f5e9 30%,#f7f9fb 60%,#e8f0fb 100%);
+      background-size:400% 400%; animation:gradShift 12s ease infinite;
+    }
+    @keyframes gradShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+    .orb { position:absolute; border-radius:50%; filter:blur(70px); opacity:0.14; animation:floatOrb 9s ease-in-out infinite; pointer-events:none; }
+    .orb-1 { width:420px; height:420px; background:#006b2c; top:-120px; right:-120px; }
+    .orb-2 { width:320px; height:320px; background:#62df7d; bottom:-80px; left:-80px; animation-delay:-4.5s; }
+    @keyframes floatOrb { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-28px) scale(1.06)} }
+    .card-enter { animation:cardIn 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+    @keyframes cardIn { from{opacity:0;transform:translateY(28px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+    .form-slide { transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .toast {
+      position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:12px;
+      background:#006b2c; color:white; font-size:14px; font-weight:500;
+      box-shadow:0 8px 24px rgba(0,107,44,0.3); z-index:9999; opacity:0;
+      transform:translateY(12px); transition:all 0.3s ease;
+      display:flex; align-items:center; gap:8px; font-family:inherit;
+    }
+    .toast.show { opacity:1; transform:translateY(0); }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .animate-spin { animation:spin 0.8s linear infinite; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center relative overflow-hidden auth-bg">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <main class="w-full max-w-md mx-4 glass-card rounded-2xl overflow-hidden relative z-10 card-enter" style="max-width:420px">
+    <div class="px-8 pt-8 pb-5 text-center">
+      <div class="flex justify-center mb-3">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(0,107,44,0.1)">
+          <span class="material-symbols-outlined text-4xl" style="color:#006b2c">eco</span>
+        </div>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight mb-1" style="color:#191c1e">Leafy Powder Pro</h1>
+      <p class="text-sm" style="color:#3e4a3d">Quality Checker &amp; Analysis Log</p>
+    </div>
+
+    <div class="flex mx-6" style="border-bottom:1px solid #e0e3e5">
+      <button class="flex-1 py-3 text-sm font-semibold text-center tab-active transition-all" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+      <button class="flex-1 py-3 text-sm font-semibold text-center tab-inactive transition-all" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <div class="relative overflow-hidden" id="forms-container" style="min-height:300px">
+      <form class="absolute inset-0 px-8 pt-6 pb-4 form-slide flex flex-col gap-4" id="form-signin" onsubmit="handleSignIn(event)" style="transform:translateX(0)">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signin-email">Email Address</label>
+          <input class="input-field" id="signin-email" placeholder="technician@lab.com" required type="email"/>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signin-password">Password</label>
+            <a class="text-xs font-medium hover:underline" href="#" style="color:#006b2c">Forgot password?</a>
+          </div>
+          <input class="input-field" id="signin-password" placeholder="••••••••" required type="password"/>
+        </div>
+        <div class="pt-1">
+          <button class="btn-primary" id="signin-btn" type="submit">
+            <span id="signin-label">Authenticate</span>
+            <span class="material-symbols-outlined" id="signin-icon" style="font-size:18px">login</span>
+          </button>
+        </div>
+      </form>
+
+      <form class="absolute inset-0 px-8 pt-5 pb-4 form-slide invisible flex flex-col gap-3" id="form-signup" onsubmit="handleSignUp(event)" style="transform:translateX(100%)">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-name">Full Name</label>
+          <input class="input-field" id="signup-name" placeholder="Dr. Jane Doe" required type="text"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-email">Email Address</label>
+          <input class="input-field" id="signup-email" placeholder="technician@lab.com" required type="email"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-password">Password</label>
+          <input class="input-field" id="signup-password" placeholder="••••••••" required type="password"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-bold uppercase tracking-widest" style="color:#3e4a3d" for="signup-confirm">Confirm Password</label>
+          <input class="input-field" id="signup-confirm" placeholder="••••••••" required type="password"/>
+        </div>
+        <div class="pt-1">
+          <button class="btn-primary" type="submit">
+            <span>Create Account</span>
+            <span class="material-symbols-outlined" style="font-size:18px">person_add</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="px-8 pb-6 pt-4 text-center" style="border-top:1px solid #e0e3e5">
+      <p class="text-xs flex items-center justify-center gap-1.5" style="color:rgba(62,74,61,0.55)">
+        <span class="material-symbols-outlined" style="font-size:14px">lock</span>
+        Secured by AgriSpec Spectral Protocol v2.4
+      </p>
+    </div>
+  </main>
+
+  <div class="toast" id="toast">
+    <span class="material-symbols-outlined" id="toast-icon" style="font-size:16px">check_circle</span>
+    <span id="toast-msg">Success!</span>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      const si=document.getElementById('form-signin'), su=document.getElementById('form-signup');
+      const tsi=document.getElementById('tab-signin'), tsu=document.getElementById('tab-signup');
+      const c=document.getElementById('forms-container');
+      if(tab==='signin'){
+        tsi.className='flex-1 py-3 text-sm font-semibold text-center tab-active transition-all';
+        tsu.className='flex-1 py-3 text-sm font-semibold text-center tab-inactive transition-all';
+        si.style.transform='translateX(0)'; si.classList.remove('invisible');
+        su.style.transform='translateX(100%)';
+        setTimeout(()=>su.classList.add('invisible'),350);
+        c.style.minHeight='300px';
+      } else {
+        tsu.className='flex-1 py-3 text-sm font-semibold text-center tab-active transition-all';
+        tsi.className='flex-1 py-3 text-sm font-semibold text-center tab-inactive transition-all';
+        su.style.transform='translateX(0)'; su.classList.remove('invisible');
+        si.style.transform='translateX(-100%)';
+        setTimeout(()=>si.classList.add('invisible'),350);
+        c.style.minHeight='420px';
+      }
+    }
+    function showToast(msg,icon,isError){
+      const t=document.getElementById('toast');
+      document.getElementById('toast-msg').textContent=msg;
+      document.getElementById('toast-icon').textContent=icon||'check_circle';
+      t.style.background=isError?'#ba1a1a':'#006b2c';
+      t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200);
+    }
+    function handleSignIn(e){
+      e.preventDefault();
+      const btn=document.getElementById('signin-btn');
+      const lbl=document.getElementById('signin-label');
+      const ico=document.getElementById('signin-icon');
+      lbl.textContent='Authenticating...'; ico.textContent='autorenew'; ico.classList.add('animate-spin'); btn.disabled=true;
+      setTimeout(()=>{
+        ico.classList.remove('animate-spin'); lbl.textContent='Authenticate'; ico.textContent='login'; btn.disabled=false;
+        showToast('Login successful! Redirecting\u2026','check_circle',false);
+        setTimeout(()=>{window.location.href='dashboard.html';},900);
+      },1300);
+    }
+    function handleSignUp(e){
+      e.preventDefault();
+      if(document.getElementById('signup-password').value!==document.getElementById('signup-confirm').value){
+        showToast('Passwords do not match.','error',true); return;
+      }
+      showToast('Account created! Please sign in.','person_add',false);
+      setTimeout(()=>switchTab('signin'),1600);
+    }
+  </script>
+</body>
+</html>
